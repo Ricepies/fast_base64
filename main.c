@@ -21,7 +21,7 @@ static int get_omp_threads(void) {
     return n > MAX_OMP_THREADS ? MAX_OMP_THREADS : n;
 }
 
-static void write_all_fd(int fd, const char *buf, usize len) {
+static void write_all_fd(int fd, const char *__restrict__ buf, usize len) {
     usize off = 0;
     while (off < len) {
         ssize_t n = write(fd, buf + off, len - off);
@@ -36,8 +36,8 @@ static void write_all_fd(int fd, const char *buf, usize len) {
     }
 }
 
-static void write_wrapped_fd(int fd, const char *b64, usize len, usize wrap,
-                             usize *col) {
+static void write_wrapped_fd(int fd, const char *__restrict__ b64, usize len, usize wrap,
+                             usize *__restrict__ col) {
     if (len == 0) {
         return;
     }
@@ -77,7 +77,7 @@ static void write_wrapped_fd(int fd, const char *b64, usize len, usize wrap,
     }
 }
 
-static void encode_stream(FILE *in, int out_fd, usize wrap) {
+static void encode_stream(FILE *__restrict__ in, int out_fd, usize wrap) {
     char *in_buf = (char *)malloc(STREAM_CHUNK);
     char *b64_buf = (char *)malloc((STREAM_CHUNK / 3) * 4);
     if (!in_buf || !b64_buf) {
@@ -128,7 +128,7 @@ static void encode_stream(FILE *in, int out_fd, usize wrap) {
     free(b64_buf);
 }
 
-static void encode_mmap(const char *in_map, usize file_size, int out_fd,
+static void encode_mmap(const char *__restrict__ in_map, usize file_size, int out_fd,
                         bool out_mmap, usize wrap) {
     usize raw_b64_len = ((file_size + 2) / 3) * 4;
 
@@ -187,8 +187,8 @@ static void encode_mmap(const char *in_map, usize file_size, int out_fd,
     free(out_buf);
 }
 
-static void decode_tail_or_die(const char *q, usize len, bool require_canon_pad,
-                               int out_fd, char *out, usize *out_len) {
+static void decode_tail_or_die(const char *__restrict__ q, usize len, bool require_canon_pad,
+                               int out_fd, char *__restrict__ out, usize *__restrict__ out_len) {
     if (len == 0) {
         *out_len = 0;
         return;
@@ -233,8 +233,8 @@ static void decode_tail_or_die(const char *q, usize len, bool require_canon_pad,
     }
 }
 
-static void flush_clean_and_tail(char *clean_buf, usize *clean_len, int out_fd,
-                                 char *out_buf, bool require_canon_pad) {
+static void flush_clean_and_tail(char *__restrict__ clean_buf, usize *__restrict__ clean_len, int out_fd,
+                                 char *__restrict__ out_buf, bool require_canon_pad) {
     usize full = (*clean_len / 4) * 4;
     if (full > 0) {
         if (b64_dec_clean_range(clean_buf, out_buf, full) != 0) {
@@ -255,7 +255,7 @@ static void flush_clean_and_tail(char *clean_buf, usize *clean_len, int out_fd,
     *clean_len = 0;
 }
 
-static void decode_stream(FILE *in, int out_fd, bool ignore_garbage) {
+static void decode_stream(FILE *__restrict__ in, int out_fd, bool ignore_garbage) {
     char *raw_buf = (char *)malloc(STREAM_CHUNK);
     char *clean_buf = (char *)malloc(STREAM_CHUNK + 4);
     char *out_buf = (char *)malloc((STREAM_CHUNK / 4) * 3 + 4);
@@ -353,7 +353,7 @@ static void decode_stream(FILE *in, int out_fd, bool ignore_garbage) {
     free(out_buf);
 }
 
-static bool decode_mmap_fast(const char *in_map, usize file_size, int out_fd,
+static bool decode_mmap_fast(const char *__restrict__ in_map, usize file_size, int out_fd,
                              bool out_mmap) {
     if (file_size % 4 != 0) {
         return false;

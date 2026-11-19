@@ -32,7 +32,7 @@ static const u8 b64_dec_lut[128] = {
     49,   50,   51,   0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 };
 
-static inline void enc_pack_u32(const unsigned char *p, char *out) {
+static inline void enc_pack_u32(const unsigned char *__restrict__ p, char *__restrict__ out) {
     u32 val = ((u32)p[0] << 16) | ((u32)p[1] << 8) | (u32)p[2];
     u32 packed = ((u32)(u8)b64_enc_lut[(val >> 18) & 0x3F]) |
                  ((u32)(u8)b64_enc_lut[(val >> 12) & 0x3F] << 8) |
@@ -47,7 +47,7 @@ static inline void enc_pack_u32(const unsigned char *p, char *out) {
 #define B64_SIMD_ENC_LOAD 28
 #define B64_SIMD_DEC_IN 32
 
-static inline void b64_enc_simd_block(const char *in, char *out) {
+static inline void b64_enc_simd_block(const char *__restrict__ in, char *__restrict__ out) {
     const __m128i lo128 = _mm_loadu_si128((const __m128i *)in);
     const __m128i hi128 = _mm_loadu_si128((const __m128i *)(in + 12));
     __m256i v = _mm256_set_m128i(hi128, lo128);
@@ -77,7 +77,7 @@ static inline void b64_enc_simd_block(const char *in, char *out) {
     _mm256_storeu_si256((__m256i *)out, ascii);
 }
 
-static inline int b64_dec_simd_block(const char *in, char *out) {
+static inline int b64_dec_simd_block(const char *__restrict__ in, char *__restrict__ out) {
     const __m256i v = _mm256_loadu_si256((const __m256i *)in);
 
     /* Validate all 32 bytes are in [A-Za-z0-9+/] (Muła/Lemire nibble check) */
@@ -145,7 +145,7 @@ static inline int b64_dec_simd_block(const char *in, char *out) {
 #define B64_SIMD_ENC_LOAD 48
 #define B64_SIMD_DEC_IN 64
 
-static inline void b64_enc_simd_block(const char *in, char *out) {
+static inline void b64_enc_simd_block(const char *__restrict__ in, char *__restrict__ out) {
     uint8x16x3_t raw = vld3q_u8((const uint8_t *)in);
     uint8x16_t i0 = vshrq_n_u8(raw.val[0], 2);
     uint8x16_t i1 = vandq_u8(
@@ -165,7 +165,7 @@ static inline void b64_enc_simd_block(const char *in, char *out) {
     vst4q_u8((uint8_t *)out, enc);
 }
 
-static inline int b64_dec_simd_block(const char *in, char *out) {
+static inline int b64_dec_simd_block(const char *__restrict__ in, char *__restrict__ out) {
     uint8x16x4_t enc = vld4q_u8((const uint8_t *)in);
     uint8x16_t v0 = enc.val[0], v1 = enc.val[1], v2 = enc.val[2], v3 = enc.val[3];
     /* Validate ASCII < 128 */
@@ -197,7 +197,7 @@ static inline int b64_dec_simd_block(const char *in, char *out) {
 #define B64_SIMD_ENC_IN 12
 #define B64_SIMD_ENC_LOAD 16
 
-static inline void b64_enc_simd_block(const char *in, char *out) {
+static inline void b64_enc_simd_block(const char *__restrict__ in, char *__restrict__ out) {
     vector unsigned char v = vec_vsx_ld(0, (const unsigned char *)in);
     const vector unsigned char shuf = {
         1, 0, 2, 1, 4, 3, 5, 4, 7, 6, 8, 7, 10, 9, 11, 10};
@@ -230,7 +230,7 @@ static inline void b64_enc_simd_block(const char *in, char *out) {
 #include <riscv_vector.h>
 #define B64_SIMD_RVV 1
 
-static inline usize b64_enc_rvv(const char *in, char *out, usize groups) {
+static inline usize b64_enc_rvv(const char *__restrict__ in, char *__restrict__ out, usize groups) {
     usize done = 0;
     while (done < groups) {
         size_t vl = __riscv_vsetvl_e8m1(groups - done);
@@ -265,8 +265,8 @@ static inline usize b64_enc_rvv(const char *in, char *out, usize groups) {
 }
 #endif
 
-static inline void b64_enc_range(const char *in, char *out, usize inSize) {
-    const unsigned char *p = (const unsigned char *)in;
+static inline void b64_enc_range(const char *__restrict__ in, char *__restrict__ out, usize inSize) {
+    const unsigned char *__restrict__ p = (const unsigned char *)in;
     usize i = 0;
 
 #ifdef B64_SIMD_ENC_IN
@@ -301,7 +301,7 @@ static inline void b64_enc_range(const char *in, char *out, usize inSize) {
 
 /* Decodes exact multiple-of-4 valid Base64 (no '=' or whitespace inside).
    Returns 0 on success, -1 if an invalid character is encountered. */
-static inline int b64_dec_clean_range(const char *in, char *out, usize inSize) {
+static inline int b64_dec_clean_range(const char *__restrict__ in, char *__restrict__ out, usize inSize) {
     usize i = 0;
 
 #ifdef B64_SIMD_DEC_IN
