@@ -28,4 +28,4 @@ Supports standard GNU `base64` options (`-d`/`--decode`, `-i`/`--ignore-garbage`
 
 ## License
 
-GNU Lesser General Public License v3.0 (see [LICENSE](LICENSE) and [COPYING](COPYING)).
+GNU Affero General Public License v3.0 (see [LICENSE](LICENSE)).
